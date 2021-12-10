@@ -49,6 +49,8 @@ func BookHandler(rw http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(rw).Encode(AllBooks)
 
+	AllBooks = nil
+
 }
 
 // get one book by id
@@ -56,15 +58,12 @@ func BookHandlerById(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 	id := mux.Vars(r)
 
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
-
-	db, err := sql.Open("postgres", psqlInfo)
+	db , err := db.ConnectDB()
 
 	if err != nil {
 		panic(err)
 	}
+
 
 	sqlStatement := `SELECT * FROM books WHERE id=$1;`
 
@@ -92,13 +91,9 @@ func BookHandlerById(rw http.ResponseWriter, r *http.Request) {
 //delete one book
 func DeleteBookHandler(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
-	id := mux.Vars(r)
+	id := mux.Vars(r)["id"]
 
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
-
-	db, err := sql.Open("postgres", psqlInfo)
+	db , err := db.ConnectDB()
 
 	if err != nil {
 		panic(err)
@@ -106,7 +101,7 @@ func DeleteBookHandler(rw http.ResponseWriter, r *http.Request) {
 
 	deleteSqlStatement := `DELETE FROM books WHERE id = $1;`
 
-	_, err = db.Exec(deleteSqlStatement, id["id"])
+	_, err = db.Exec(deleteSqlStatement, id)
 
 	if err != nil {
 		panic(err)
@@ -163,35 +158,7 @@ func CreateBookHandler(rw http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	// select_query := `SELECT * FROM books ORDER BY id;`
 
-	// rows, err := db.Query(select_query)
-
-	// for rows.Next() {
-	// 	var u models.BooksDB
-
-	// 	err := rows.Scan(&u.ID, &u.Name)
-
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-
-	// 	BooksDB = append(BooksDB, u)
-
-	// }
-
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// json.NewEncoder(rw).Encode(BooksDB)
-
-	// var book Books
-
-	// _ = json.NewDecoder(r.Body).Decode(&book)
-
-	// AllBooks = append(AllBooks, book)
-	// json.NewEncoder(rw).Encode(AllBooks)
 }
 
 //edit book handler
@@ -216,93 +183,10 @@ func EditBookHandler(rw http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(rw).Encode(n)
 
-	// select_query := `SELECT * FROM books ORDER BY id;`
-
-	// rows, err := db.Query(select_query)
-
-	// for rows.Next() {
-	// 	var u models.BooksDB
-
-	// 	err := rows.Scan(&u.ID, &u.Name)
-
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-
-	// 	BooksDB = append(BooksDB, u)
-
-	// }
-
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// json.NewEncoder(rw).Encode(BooksDB)
-
-	// for index, item := range AllBooks {
-	// 	if item.ID == id["id"] {
-	// 		AllBooks = append(AllBooks[:index], AllBooks[index+1:]...)
-
-	// 		var book Books
-
-	// 		_ = json.NewDecoder(r.Body).Decode(&book)
-	// 		book.ID = strconv.Itoa(rand.Intn(rand.Intn(10000000)))
-	// 		AllBooks = append(AllBooks, book)
-	// 		json.NewEncoder(rw).Encode(AllBooks)
-	// 		return
-	// 	}
-	// }
-
 }
 func main() {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
 
-	db, err := sql.Open("postgres", psqlInfo)
-
-	if err != nil {
-		panic(err)
-	}
-
-	// query := `
-	// CREATE TABLE books (
-	//     id SERIAL PRIMARY KEY ,
-	// 	name VARCHAR(32)
-	// );`
-	// _, err = db.Exec(query)
-
-	// inser_query := `
-	// 	INSERT INTO books("name") VALUES ('biology');
-	// `
-	// _, err = db.Exec(inser_query)
-
-	// select_query := `SELECT * FROM books;`
-
-	// rows, err := db.Query(select_query)
-
-	// var db_books []Books
-
-	// for rows.Next() {
-	// 	var u Books
-
-	// 	err := rows.Scan(&u.ID, &u.Name)
-
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-
-	// 	db_books = append(db_books, u)
-
-	// }
-
-	// fmt.Println(db_books)
-
-	// defer rows.Close()
-
-	// if err != nil {
-	// 	panic(err)
-	// }
+	db, _ := db.ConnectDB()
 
 	defer db.Close()
 
