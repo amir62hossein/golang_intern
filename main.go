@@ -1,10 +1,10 @@
 package main
 
 import (
-	"database/sql"
+	
 
 	"encoding/json"
-	"fmt"
+	
 	"internship/db"
 	"internship/models"
 	_ "math/rand"
@@ -15,26 +15,12 @@ import (
 	_ "github.com/lib/pq"
 )
 
-const (
-	host     = "localhost"
-	port     = 5432
-	user     = "postgres"
-	password = "nourian1999"
-	dbname   = "book_store"
-)
-
 var BooksDB []models.BooksDB
 
 // get all books
 func BookHandler(rw http.ResponseWriter, r *http.Request) {
 
 	rw.Header().Set("Content-Type", "application/json")
-
-	_, err := db.ConnectDB()
-
-	if err != nil {
-		panic(err)
-	}
 
 	AllBooks := db.QueryAllBooks()
 
@@ -46,12 +32,6 @@ func BookHandler(rw http.ResponseWriter, r *http.Request) {
 func BookHandlerById(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 	id := mux.Vars(r)["id"]
-
-	_, err := db.ConnectDB()
-
-	if err != nil {
-		panic(err)
-	}
 
 	book := db.QuerySingelBook(id)
 
@@ -89,23 +69,15 @@ func CreateBookHandler(rw http.ResponseWriter, r *http.Request) {
 func EditBookHandler(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 
-	//id := mux.Vars(r)
+	id := mux.Vars(r)["id"]
 
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+	var newName string
 
-	_, err := sql.Open("postgres", psqlInfo)
+	json.NewDecoder(r.Body).Decode(&newName)
 
-	if err != nil {
-		panic(err)
-	}
+	BooksDB = db.QueryEditBook(id , newName)
 
-	var n models.PostBook
-
-	_ = json.NewDecoder(r.Body).Decode(&n.Name)
-
-	json.NewEncoder(rw).Encode(n)
+	json.NewEncoder(rw).Encode(BooksDB)
 
 }
 func main() {

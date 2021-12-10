@@ -124,7 +124,7 @@ func QueryCreateBook(bookName string) []models.BooksDB {
 
 	createBookStatement := `INSERT INTO books (name) VALUES ($1);`
 
-	_, err = db.Exec(createBookStatement , string(bookName))
+	_, err = db.Exec(createBookStatement, string(bookName))
 	if err != nil {
 		panic(err)
 	}
@@ -133,4 +133,26 @@ func QueryCreateBook(bookName string) []models.BooksDB {
 
 	return BooksDB
 
+}
+
+func QueryEditBook(id string, newName string) []models.BooksDB {
+	BooksDB = nil
+
+	db, err := ConnectDB()
+
+	if err != nil {
+		panic(err)
+	}
+
+	updateBookStatenet := `UPDATE books SET name = $2 WHERE id = $1;`
+
+	_, err = db.Exec(updateBookStatenet, id, string(newName))
+
+	if err != nil {
+		panic(err)
+	}
+
+	BooksDB = QueryAllBooks()
+
+	return BooksDB
 }
