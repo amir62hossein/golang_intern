@@ -23,16 +23,7 @@ const (
 	dbname   = "book_store"
 )
 
-var Test struct {
-	Name string `json:"name"`
-}
-
 var BooksDB []models.BooksDB
-
-// home routes
-func HomeHnadler(rw http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(rw, "Home address...")
-}
 
 // get all books
 func BookHandler(rw http.ResponseWriter, r *http.Request) {
@@ -49,42 +40,24 @@ func BookHandler(rw http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(rw).Encode(AllBooks)
 
-	AllBooks = nil
-
 }
 
 // get one book by id
 func BookHandlerById(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
-	id := mux.Vars(r)
+	id := mux.Vars(r)["id"]
 
-	db , err := db.ConnectDB()
+	_, err := db.ConnectDB()
 
 	if err != nil {
 		panic(err)
 	}
 
+	book := db.QuerySingelBook(id)
 
-	sqlStatement := `SELECT * FROM books WHERE id=$1;`
+	json.NewEncoder(rw).Encode(book)
 
-	var book models.BooksDB
-
-	row := db.QueryRow(sqlStatement, id["id"])
-
-	err = row.Scan(&book.ID, &book.Name)
-
-	switch err {
-	case sql.ErrNoRows:
-		fmt.Println("No rows were returned!")
-		return
-	case nil:
-		BooksDB = append(BooksDB, book)
-		json.NewEncoder(rw).Encode(BooksDB)
-		BooksDB = nil
-		return
-	default:
-		panic(err)
-	}
+	book = nil
 
 }
 
@@ -93,39 +66,7 @@ func DeleteBookHandler(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 	id := mux.Vars(r)["id"]
 
-	db , err := db.ConnectDB()
-
-	if err != nil {
-		panic(err)
-	}
-
-	deleteSqlStatement := `DELETE FROM books WHERE id = $1;`
-
-	_, err = db.Exec(deleteSqlStatement, id)
-
-	if err != nil {
-		panic(err)
-	}
-	select_query := `SELECT * FROM books ORDER BY id;`
-
-	rows, err := db.Query(select_query)
-
-	for rows.Next() {
-		var u models.BooksDB
-
-		err := rows.Scan(&u.ID, &u.Name)
-
-		if err != nil {
-			panic(err)
-		}
-
-		BooksDB = append(BooksDB, u)
-
-	}
-
-	if err != nil {
-		panic(err)
-	}
+	BooksDB = db.QueryDeleteBook(id)
 
 	json.NewEncoder(rw).Encode(BooksDB)
 
@@ -133,31 +74,14 @@ func DeleteBookHandler(rw http.ResponseWriter, r *http.Request) {
 
 // create one book
 func CreateBookHandler(rw http.ResponseWriter, r *http.Request) {
-	rw.Header().Set("Content-Type", "application/json")
 
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+	var bookName string
 
-	db, err := sql.Open("postgres", psqlInfo)
+	json.NewDecoder(r.Body).Decode(&bookName)
 
-	if err != nil {
-		panic(err)
-	}
+	BooksDB = db.QueryCreateBook(bookName)
 
-	var n string = "finall"
-
-	//_ = json.NewDecoder(r.Body).Decode(&n)
-
-	json.NewEncoder(rw).Encode(n)
-
-	sqlInsertStatement := `INSERT INTO books (name) VALUES($1);`
-
-	_, err = db.Exec(sqlInsertStatement, n)
-
-	if err != nil {
-		panic(err)
-	}
+	json.NewEncoder(rw).Encode(BooksDB)
 
 }
 
@@ -191,7 +115,7 @@ func main() {
 	defer db.Close()
 
 	router := mux.NewRouter()
-	router.HandleFunc("/", HomeHnadler).Methods("GET")
+
 	router.HandleFunc("/books", BookHandler).Methods("GET")
 	router.HandleFunc("/books/{id}", BookHandlerById).Methods("GET")
 	router.HandleFunc("/books/{id}", DeleteBookHandler).Methods("DELETE")
